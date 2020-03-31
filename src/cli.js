@@ -53,10 +53,6 @@ ${ padding }Options:
 ${ padding }                - Building all pages
 ${ padding }  ${ Style.gray(`$`) } ${ Style.yellow( Style.bold(`cuttlebelle`) ) }
 
-${ padding }  ${ Style.bold(`init`) }          - Create a clean slate website to get you started
-${ padding }                - Shortcut: ${ Style.yellow( Style.bold(`-i`) ) }
-${ padding }  ${ Style.gray(`$`) } ${ Style.yellow( Style.bold(`cuttlebelle init`) ) }
-
 ${ padding }  ${ Style.bold(`watch`) }         - Start to watch the content and source folder for changes
 ${ padding }                - Shortcut: ${ Style.yellow( Style.bold(`-w`) ) }
 ${ padding }  ${ Style.gray(`$`) } ${ Style.yellow( Style.bold(`cuttlebelle watch`) ) }

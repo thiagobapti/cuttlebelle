@@ -24,7 +24,6 @@ import { DisplayHelp, DisplayVersion, DisplayWelcome } from './cli';
 import { RenderAllPages, RenderAssets, PreRender } from './render';
 import { SETTINGS } from './settings';
 import { Watch } from './watch';
-import { Init } from './init';
 import { Path } from './path';
 
 
@@ -75,12 +74,6 @@ if( Fs.existsSync( pkgLocation ) ) {
 	SETTINGS.set( loacalPkg.cuttlebelle );
 }
 
-
-// run init before building
-if( process.argv.includes('-i') || process.argv.includes('init') ) {
-	Init();
-}
-
 // build site
 
 	( async function () {
@@ -100,7 +93,7 @@ if( process.argv.includes('-i') || process.argv.includes('init') ) {
 
 		// nothing to render
 		if( content.length === 0 ) {
-			Log.info(`Nothing to generate; consider running ${ Style.yellow(`cuttlebelle init`) } to get a clean slate.`);
+			Log.info(`Nothing to generate;`);
 
 			const elapsedTime = process.hrtime( startTime );
 			Log.done(`Done in ${ Style.yellow(`${ ConvertHrtime( elapsedTime ) }s`) }`);
