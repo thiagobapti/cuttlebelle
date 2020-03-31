@@ -69,15 +69,15 @@ export const SETTINGS = {
 		folder: {
 			cwd: Path.normalize(`${ process.cwd() }/`),
 			content: Path.normalize(`${ process.cwd() }/content/`),
-			code: Path.normalize(`${ process.cwd() }/code/`),
+			code: Path.normalize(`${ process.cwd() }/layout/`),
 			assets: Path.normalize(`${ process.cwd() }/assets/`),
-			site: Path.normalize(`${ process.cwd() }/site/`),
+			site: Path.normalize(`${ process.cwd() }/dist/`),
 			index: 'index',
 			homepage: 'index',
 		},
 		layouts: {
-			page: 'page',
-			partial: 'partial',
+			page: 'pages/_default',
+			partial: 'partials/_default',
 		},
 		site: {
 			root: Path.normalize(`/`),
