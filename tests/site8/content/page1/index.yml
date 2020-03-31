@@ -1,6 +1,0 @@
-
-main:
-  - /shared/component1.md
-  - partial1.md
-  - partial2.md
-  - /shared/component2.md

@@ -32,18 +32,10 @@
 		"node": ">=8"
 	},
 	"scripts": {
-		"prepublish": "yarn build && yarn test && yarn man",
-		"test": "yarn test:end-to-end && yarn test:unit && yarn test:flow",
-		"test:unit": "jest",
-		"test:detail": "jest --coverage",
-		"test:watch": "jest --watch --coverage",
-		"test:end-to-end": "node tests/tester.js",
-		"test:flow": "flow check",
-		"man": "node man/build.js",
 		"build": "yarn build:js",
 		"build:js": "babel src --out-dir dist",
-		"build:watch": "yarn build:js && yarn test:detail",
-		"watch": "yarn build && yarn test && onchange 'src/*.js' '__tests__/*.js' -- yarn build:watch",
+		"build:watch": "yarn build:js",
+		"watch": "yarn build && onchange 'src/*.js' -- yarn build:watch",
 		"nuke": "rm -rf dist && rm -rf node_modules && rm yarn.lock"
 	},
 	"dependencies": {
@@ -80,25 +72,8 @@
 		"diff": "^4.0.1",
 		"dirsum": "^0.1.1",
 		"flow-bin": "^0.114.0",
-		"jest-cli": "^24.9.0",
-		"marked-man": "^0.7.0",
 		"onchange": "^6.1.0",
 		"replace-in-file": "^5.0.2"
-	},
-	"jest": {
-		"testEnvironment": "node",
-		"testRegex": "\\.spec.js$",
-		"collectCoverageFrom": [
-			"src/*.js"
-		],
-		"coverageThreshold": {
-			"global": {
-				"branches": 0,
-				"functions": 0,
-				"lines": 0,
-				"statements": 0
-			}
-		}
 	},
 	"keywords": [
 		"static site generator",
@@ -109,18 +84,13 @@
 		"pretty"
 	],
 	"files": [
-		".template/*",
 		"dist/*",
 		"assets/*",
-		"man/*",
 		".babelrc"
 	],
 	"main": "dist/index.js",
 	"bin": {
 		"cuttlebelle": "./dist/index.js"
-	},
-	"directories": {
-		"man": "man"
 	},
 	"license": "GPL-3.0"
 }

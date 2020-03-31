@@ -1,4 +1,0 @@
----
-layout: setStore
-thing: 'setting'
----

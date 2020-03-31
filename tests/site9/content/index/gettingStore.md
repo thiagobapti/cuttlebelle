@@ -1,4 +1,0 @@
----
-layout: getStore
-thing: 'getting'
----

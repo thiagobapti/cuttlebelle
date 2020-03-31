@@ -23,7 +23,6 @@ import { ConvertHrtime, ExitHandler, Style, Log, Notify } from './helper';
 import { DisplayHelp, DisplayVersion, DisplayWelcome } from './cli';
 import { RenderAllPages, RenderAssets, PreRender } from './render';
 import { SETTINGS } from './settings';
-import { BuildDocs } from './docs';
 import { Watch } from './watch';
 import { Init } from './init';
 import { Path } from './path';
@@ -82,35 +81,8 @@ if( process.argv.includes('-i') || process.argv.includes('init') ) {
 	Init();
 }
 
-
-// build docs
-if( process.argv.includes('-d') || process.argv.includes('docs') ) {
-	( async function () {
-		let pages;
-		try {
-			pages = await BuildDocs();
-		}
-		catch( error ) {
-			Log.error(`Trying to generate the docs failed.`);
-			Log.error( error );
-
-			process.exit( 1 );
-		}
-
-		const elapsedTime = process.hrtime( startTime );
-
-		Log.done(
-			`${ pages > 0 ? `Successfully built ${ Style.yellow( pages ) } doc pages ` : `No doc pages have been build ` }` +
-			`to ${ Style.yellow( SETTINGS.get().folder.docs.replace( SETTINGS.get().folder.cwd, '' ) ) } ` +
-			`in ${ Style.yellow(`${ ConvertHrtime( elapsedTime ) }s`) }`
-		);
-
-		process.exit( 0 );
-	})();
-}
-
 // build site
-else {
+
 	( async function () {
 		let content;
 		let layout;
@@ -181,7 +153,6 @@ else {
 			Watch.start();
 		}
 	})();
-}
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------
 // Exit handler

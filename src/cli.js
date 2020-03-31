@@ -57,10 +57,6 @@ ${ padding }  ${ Style.bold(`init`) }          - Create a clean slate website to
 ${ padding }                - Shortcut: ${ Style.yellow( Style.bold(`-i`) ) }
 ${ padding }  ${ Style.gray(`$`) } ${ Style.yellow( Style.bold(`cuttlebelle init`) ) }
 
-${ padding }  ${ Style.bold(`docs`) }          - Build documentation from your layout components
-${ padding }                - Shortcut: ${ Style.yellow( Style.bold(`-d`) ) }
-${ padding }  ${ Style.gray(`$`) } ${ Style.yellow( Style.bold(`cuttlebelle docs`) ) }
-
 ${ padding }  ${ Style.bold(`watch`) }         - Start to watch the content and source folder for changes
 ${ padding }                - Shortcut: ${ Style.yellow( Style.bold(`-w`) ) }
 ${ padding }  ${ Style.gray(`$`) } ${ Style.yellow( Style.bold(`cuttlebelle watch`) ) }

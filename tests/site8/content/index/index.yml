@@ -1,6 +1,0 @@
-layout: homepage
-
-main:
-  - partial1.md
-  - partial2.md
-  - partial3.md
