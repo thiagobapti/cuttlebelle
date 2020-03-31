@@ -154,8 +154,6 @@ export const UpdateChange = ( path, history, _doEverything = false ) => {
 
 	Progress.done = 0;
 
-	Layouts.empty();
-
 	// A page is being changed
 	if( !_doEverything ) {
 
@@ -403,8 +401,4 @@ export const Layouts = {
 			Layouts.all[ layout ].push( page );
 		}
 	},
-
-	empty: () => {
-		Layouts.all = {};
-	}
 };

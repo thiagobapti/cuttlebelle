@@ -304,21 +304,6 @@ export const RenderFile = ( content, file, parent = '', rendered = [], iterator 
 					// keeping track of all pages per layout will make the watch better
 					Layouts.set( ID, parsedBody.frontmatter.layout );
 
-					if( file.endsWith('.yml') ) {
-						let _page = ID;
-						let _layouts = [];
-
-						for(const layout in Layouts.all){
-								for(const page of Layouts.all[layout]){
-										if(page === _page ){
-											_layouts.push(layout);
-										}
-								}
-						}
-
-						Log.verbose(`_layouts for ${ID}: ${Style.green(JSON.stringify(_layouts))}`)
-					}
-
 					// and off we go into the react render machine
 					let pageHTML = RenderReact(
 						Path.normalize(`${ SETTINGS.get().folder.code }/${ parsedBody.frontmatter.layout }`),
