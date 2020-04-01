@@ -72,11 +72,12 @@ export const SETTINGS = {
 			code: Path.normalize(`${ process.cwd() }/layout/`),
 			assets: Path.normalize(`${ process.cwd() }/assets/`),
 			site: Path.normalize(`${ process.cwd() }/dist/`),
+			styles: Path.normalize(`${ process.cwd() }/styles/`),
 			index: 'index',
 			homepage: 'index',
 		},
 		layouts: {
-			page: 'pages/_default',
+			page: 'templates/_default',
 			partial: 'partials/_default',
 		},
 		site: {

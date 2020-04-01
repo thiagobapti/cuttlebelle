@@ -49,6 +49,7 @@ import ReactDOMServer from 'react-dom/server';
 import Traverse from 'traverse';
 import React from 'react';
 import Fs from 'fs';
+import sass from 'node-sass';
 
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -305,8 +306,12 @@ export const RenderFile = ( content, file, parent = '', rendered = [], iterator 
 					Layouts.set( ID, parsedBody.frontmatter.layout );
 
 					if( file.endsWith('.yml') ) {
-						let _page = ID;
-						let _layouts = [];
+						
+						// Generate a per-page partials list
+
+						const _page = ID;
+						const _layouts = [];
+						const _styles = [];
 
 						for(const layout in Layouts.all){
 								for(const page of Layouts.all[layout]){
@@ -316,7 +321,42 @@ export const RenderFile = ( content, file, parent = '', rendered = [], iterator 
 								}
 						}
 
-						Log.verbose(`_layouts for ${ID}: ${Style.green(JSON.stringify(_layouts))}`)
+						// Load global styles
+						const globalStyleFilePath = Path.normalize(`${ SETTINGS.get().folder.styles }/_globals.scss`);
+
+						if (Fs.existsSync(globalStyleFilePath)) {
+							const fileContent = Fs.readFileSync(globalStyleFilePath, "utf8");
+
+							_styles.push(fileContent);
+						}
+
+						// Load for partials styles
+						_layouts.forEach((layout) => {
+							const layoutStyleFilePath = Path.normalize(`${ SETTINGS.get().folder.styles }/${ layout }.scss`);
+							
+							if (Fs.existsSync(layoutStyleFilePath)) {
+								const fileContent = Fs.readFileSync(layoutStyleFilePath, "utf8");
+
+								_styles.push(fileContent);  
+							}
+						})
+
+						// Load page styles
+						const pageStyleFilePath = Path.normalize(`${ SETTINGS.get().folder.styles }/pages/${ID}.scss`);
+						
+						if (Fs.existsSync(pageStyleFilePath)) {
+							const fileContent = Fs.readFileSync(pageStyleFilePath, "utf8");
+							
+							_styles.push(fileContent);
+						}
+						
+						const compiledSASS = sass.renderSync({
+							data: _styles.join(''),
+							outputStyle: 'compressed',
+							includePaths: [Path.normalize(`${ SETTINGS.get().folder.styles }`)]
+						});
+						
+						console.log('compiledSASS', compiledSASS.css.toString());
 					}
 
 					// and off we go into the react render machine

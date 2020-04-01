@@ -65,6 +65,7 @@ export const Watch = {
 			Path.normalize(`${ SETTINGS.get().folder.content }/**/*.md`),
 			Path.normalize(`${ SETTINGS.get().folder.code }/**/*.js`),
 			Path.normalize(`${ SETTINGS.get().folder.assets }/**/*`),
+			Path.normalize(`${ SETTINGS.get().folder.styles }/**/*`),
 		], {
 			ignoreInitial: true,
 		})
