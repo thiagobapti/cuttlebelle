@@ -50,6 +50,8 @@ import Traverse from 'traverse';
 import React from 'react';
 import Fs from 'fs';
 import sass from 'node-sass';
+import autoprefixer from 'autoprefixer';
+import postcss from 'postcss';  
 
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -291,7 +293,7 @@ export const RenderFile = ( content, file, parent = '', rendered = [], iterator 
 					Log.error(`Generating page failed in ${ Style.yellow( file ) }`);
 					reject( error );
 				})
-				.then( frontmatter => {
+				.then( async (frontmatter) => {
 					parsedBody.frontmatter = frontmatter ? frontmatter : {}; // we only got one promise to resolve
 
 					// set the default layout
@@ -357,6 +359,24 @@ export const RenderFile = ( content, file, parent = '', rendered = [], iterator 
 						});
 						
 						console.log('compiledSASS', compiledSASS.css.toString());
+
+						let finalCSS = '';
+
+							await postcss([autoprefixer])
+							.process(compiledSASS.css.toString())
+							.then(result => {
+								finalCSS = result.css;
+								console.log('PostCSS:', result.css) 
+							})
+
+							if(parsedBody.frontmatter.inlineCSS) {
+								parsedBody.frontmatter._inlineCSS = finalCSS;
+							} else {
+								const newPath = Path.normalize(`${ SETTINGS.get().folder.site }/${ID}/styles.css`);
+								CreateFile( newPath, finalCSS)
+								.catch( error => reject( error ) );
+								parsedBody.frontmatter.stylesheet = 'styles.css';
+							}
 					}
 
 					// and off we go into the react render machine
@@ -377,7 +397,6 @@ export const RenderFile = ( content, file, parent = '', rendered = [], iterator 
 		});
 	}
 };
-
 
 /**
  * Iterate frontmatter and look for partials to render
