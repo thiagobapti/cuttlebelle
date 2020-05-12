@@ -52,6 +52,7 @@ import Fs from 'fs';
 import sass from 'node-sass';
 import autoprefixer from 'autoprefixer';
 import postcss from 'postcss';  
+import shortid from 'shortid';
 
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -372,10 +373,11 @@ export const RenderFile = ( content, file, parent = '', rendered = [], iterator 
 							if(parsedBody.frontmatter.inlineCSS) {
 								parsedBody.frontmatter._inlineCSS = finalCSS;
 							} else {
-								const newPath = Path.normalize(`${ SETTINGS.get().folder.site }${ID !== 'index' ? '/' + ID : ''}/styles.css`);
+								const uid = shortid.generate();
+								const newPath = Path.normalize(`${ SETTINGS.get().folder.site }${ID !== 'index' ? '/' + ID : ''}/styles-${uid}.css`);
 								CreateFile( newPath, finalCSS)
 								.catch( error => reject( error ) );
-								parsedBody.frontmatter.stylesheet = 'styles.css';
+								parsedBody.frontmatter.stylesheet = `styles-${uid}.css`;
 							}
 					}
 
