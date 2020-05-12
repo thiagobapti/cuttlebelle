@@ -372,7 +372,7 @@ export const RenderFile = ( content, file, parent = '', rendered = [], iterator 
 							if(parsedBody.frontmatter.inlineCSS) {
 								parsedBody.frontmatter._inlineCSS = finalCSS;
 							} else {
-								const newPath = Path.normalize(`${ SETTINGS.get().folder.site }/${ID}/styles.css`);
+								const newPath = Path.normalize(`${ SETTINGS.get().folder.site }${ID !== 'index' ? '/' + ID : ''}/styles.css`);
 								CreateFile( newPath, finalCSS)
 								.catch( error => reject( error ) );
 								parsedBody.frontmatter.stylesheet = 'styles.css';
