@@ -53,6 +53,11 @@ import sass from 'node-sass';
 import autoprefixer from 'autoprefixer';
 import postcss from 'postcss';  
 import shortid from 'shortid';
+import {transformFileSync} from '@babel/core'
+import babelify from 'babelify';
+import browserify from 'browserify';
+import {promisify} from 'util';
+import axios from "axios";
 
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -224,7 +229,7 @@ export const RenderReact = ( componentPath, props, source = '' ) => {
  *
  * @return {promise object}  - The HTML content of the page
  */
-export const RenderFile = ( content, file, parent = '', rendered = [], iterator = 0 ) => {
+export const RenderFile = ( content, file, parent = '', rendered = [], iterator = 0, prefetchResult ) => {
 	Log.verbose(`Rendering file ${ Style.yellow( file ) }`);
 
 	if( parent === '' ) {
@@ -237,7 +242,7 @@ export const RenderFile = ( content, file, parent = '', rendered = [], iterator 
 		return Promise.reject(`A circular dependency (${ Style.yellow( file ) }) was detected in ${ Style.yellow( parent ) }`);
 	}
 	else {
-		return new Promise( ( resolve, reject ) => {
+		return new Promise( async ( resolve, reject ) => {
 			const ID = Path.normalize( parent.length > 0 ? Path.dirname( parent ) : Path.dirname( file ) ); // the ID of this page is the folder in which it exists
 
 			// to get the parents we just look at the path
@@ -252,12 +257,47 @@ export const RenderFile = ( content, file, parent = '', rendered = [], iterator 
 
 			parents = parents.reverse(); // gotta have it the right way around
 
+			//////////////////////////////////////////////
+			let fetchResult = [];
+			// (async () => {
+				
+				let parsedBodyTemp = ParseContent( content, file, { _pages: Pages.get()});
+				if( file.endsWith('.yml') ) {
+					//PRE FETCH
+					const fetchPromise = new Promise((resolve) => {
+						if(parsedBodyTemp.frontmatter.preFetch){
+							const result = parsedBodyTemp.frontmatter.preFetch.map(async (item) => {
+								const res = await axios.get(item).then((response) => response.data);
+								// console.log(res)
+								return res;
+								
+							})
+							
+							Promise.all(result).then((completed) => resolve(completed));
+						} else {
+							resolve([]);
+						}
+					});
+					
+					await fetchPromise.then((obj => fetchResult = obj));
+					// parsedBodyTemp.frontmatter.prefetchData = fetchResult;
+					
+					}
+					
+					console.log('fetchResult', fetchResult);
+				// })();
+
+			/////////////////////////////////////////////
+
+			const fetchRealData =  prefetchResult ? prefetchResult : fetchResult;
+
 			// prepare some common props that will go into the custom markdown renderer and the react renderer
 			const defaultProps = {
 				_ID: ID,
 				_self: file,
 				_isDocs: false,
 				_parents: parents,
+				_fetchResult: fetchRealData,
 				_storeSet: Store.set,
 				_store: Store.get,
 				_nav: Nav.get(),
@@ -277,6 +317,7 @@ export const RenderFile = ( content, file, parent = '', rendered = [], iterator 
 
 			// parsing out front matter for this file
 			let parsedBody = ParseContent( content, file, { _pages: Pages.get(), ...defaultProps }, );
+			console.log('parsedBody: ', parsedBody);
 
 			rendered.push( file ); // keeping track of all files we render to avoid circular dependencies
 
@@ -288,7 +329,8 @@ export const RenderFile = ( content, file, parent = '', rendered = [], iterator 
 					Path.normalize(`${ SETTINGS.get().folder.content }/${ file }`),
 					parent,
 					rendered,
-					iterator
+					iterator,
+					fetchRealData
 				)
 				.catch( error => {
 					Log.error(`Generating page failed in ${ Style.yellow( file ) }`);
@@ -336,6 +378,7 @@ export const RenderFile = ( content, file, parent = '', rendered = [], iterator 
 						// Load for partials styles
 						_layouts.forEach((layout) => {
 							const layoutStyleFilePath = Path.normalize(`${ SETTINGS.get().folder.styles }/${ layout }.scss`);
+							console.log('layoutStyleFilePath: ', layoutStyleFilePath);
 							
 							if (Fs.existsSync(layoutStyleFilePath)) {
 								const fileContent = Fs.readFileSync(layoutStyleFilePath, "utf8");
@@ -359,26 +402,120 @@ export const RenderFile = ( content, file, parent = '', rendered = [], iterator 
 							includePaths: [Path.normalize(`${ SETTINGS.get().folder.styles }`)]
 						});
 						
-						console.log('compiledSASS', compiledSASS.css.toString());
-
 						let finalCSS = '';
 
 							await postcss([autoprefixer])
 							.process(compiledSASS.css.toString())
 							.then(result => {
 								finalCSS = result.css;
-								console.log('PostCSS:', result.css) 
 							})
 
 							if(parsedBody.frontmatter.inlineCSS) {
 								parsedBody.frontmatter._inlineCSS = finalCSS;
 							} else {
 								const uid = shortid.generate();
-								const newPath = Path.normalize(`${ SETTINGS.get().folder.site }${ID !== 'index' ? '/' + ID : ''}/styles-${uid}.css`);
+								const newPath = Path.normalize(`${ SETTINGS.get().folder.site }${ID !== 'index' ? '/' + ID : ''}/styles.css`);
 								CreateFile( newPath, finalCSS)
 								.catch( error => reject( error ) );
-								parsedBody.frontmatter.stylesheet = `styles-${uid}.css`;
+								parsedBody.frontmatter.stylesheet = `styles.css`;
 							}
+
+							// JS
+							
+							let finalJS = '';
+							const jsFileList = []
+							const globalJSFileName = `${ SETTINGS.get().folder.js }_globals.js`;
+
+							if (Fs.existsSync(globalJSFileName)) {
+								jsFileList.push(globalJSFileName);
+							}
+
+
+							// Load JS for partials/templates
+							_layouts.forEach((layout) => {
+								const partialJSFilePath = Path.normalize(`${ SETTINGS.get().folder.js }/${ layout }.js`);
+								console.log('partialJSFilePath: ', partialJSFilePath);
+								
+								if (Fs.existsSync(partialJSFilePath)) {
+									// const fileContent = Fs.readFileSync(partialJSFilePath, "utf8");
+
+									// _styles.push(fileContent);
+									
+									jsFileList.push(partialJSFilePath);
+								}
+							})
+
+							const jsPromise = new Promise((resolve) => {
+								const jsFileName = `${ SETTINGS.get().folder.js }pages/${ID}.js`;
+								if (Fs.exists(jsFileName, (exists) => {
+									if(exists) jsFileList.push(jsFileName);
+
+									if(jsFileList.length){
+
+										if(process.env.NODE_ENV === 'production'){
+
+											browserify(jsFileList, {paths: [SETTINGS.get().folder.cwd]})
+											.transform("babelify", {presets: ["@babel/preset-env"]})
+											.transform('uglifyify', { sourceMap: false, global: true })
+											.bundle((err, buffer) => {
+												resolve(buffer ? buffer.toString() : '');
+											});
+										} else {
+											browserify(jsFileList, {paths: [SETTINGS.get().folder.cwd]})
+											.transform("babelify", {presets: ["@babel/preset-env"]})
+											.bundle((err, buffer) => {
+												resolve(buffer ? buffer.toString() : '');
+											});
+										}
+
+									} else {
+										resolve('');  
+									}
+								})) {
+									
+									// const js = transformFileSync(jsFileName, {rootMode: "upward"}); 
+									// console.log('js: ' + JSON.stringify(js));
+								}
+							});
+
+							await jsPromise.then((obj => finalJS = obj))
+
+							if(finalJS){
+							// Write JS
+							if(parsedBody.frontmatter.inlineJS) {
+								parsedBody.frontmatter._inlineJS = finalJS;
+							} else {
+								const uid = shortid.generate();
+								const newPath = Path.normalize(`${ SETTINGS.get().folder.site }${ID !== 'index' ? '/' + ID : ''}/bundle.js`);
+								CreateFile( newPath, finalJS)
+								.catch( error => reject( error ) );
+								parsedBody.frontmatter.script = `bundle.js`;
+							}
+							
+							}
+
+							//PRE FETCH
+						// 	let fetchResult = [];
+						// 	const fetchPromise = new Promise((resolve) => {
+						// 		if(parsedBody.frontmatter.preFetch){
+						// 		const result = parsedBody.frontmatter.preFetch.map(async (item) => {
+						// 			const res = await axios.get(item).then((response) => response.data);
+						// 			return res;
+
+						// 		})
+								
+						// 		Promise.all(result).then((completed) => resolve(completed));
+						// 	} else {
+						// 		resolve([]);
+						// 	}
+						// });
+						
+						// await fetchPromise.then((obj => fetchResult = obj));
+						// parsedBody.frontmatter.prefetchData = fetchResult;
+
+						// console.log('parsedBody2: ', parsedBody);
+
+
 					}
 
 					// and off we go into the react render machine
@@ -393,7 +530,10 @@ export const RenderFile = ( content, file, parent = '', rendered = [], iterator 
 							...defaultProps,
 							...parsedBody.frontmatter
 						}
-					).then( pageHTML => resolve( pageHTML ));
+					).then( pageHTML => {
+						pageHTML = pageHTML.replace(/RAW_EVENT_/g, '');
+						return resolve( pageHTML );
+					});
 				})
 			);
 		});
@@ -411,7 +551,7 @@ export const RenderFile = ( content, file, parent = '', rendered = [], iterator 
  *
  * @return {promise object}   - The converted frontmatter now with partials replaced with their content
  */
-export const FindPartial = ( object, file, parent, rendered, iterator = 0 ) => {
+export const FindPartial = ( object, file, parent, rendered, iterator = 0, prefetchResult ) => {
 	Log.verbose(`Rendering all partials ${ Style.yellow( JSON.stringify( object ) ) }`);
 
 	return new Promise( ( resolve, reject ) => {
@@ -437,7 +577,8 @@ export const FindPartial = ( object, file, parent, rendered, iterator = 0 ) => {
 						parent,
 						this.path,
 						[ ...rendered ],
-						iterator
+						iterator,
+						prefetchResult
 					)
 					.catch( error => {
 						Log.error(`Render partial failed for ${ Style.yellow( partial ) }`)
@@ -475,7 +616,7 @@ export const FindPartial = ( object, file, parent, rendered, iterator = 0 ) => {
  *
  * @return {promise object}   - An object with the path and the rendered HTML react object, format: { path, partial }
  */
-export const RenderPartial = ( partial, file, parent, path, rendered, iterator = 0 ) => {
+export const RenderPartial = ( partial, file, parent, path, rendered, iterator = 0, prefetchResult ) => {
 	Log.verbose(`Testing if we can render ${ Style.yellow( partial ) } as partial`);
 
 	return new Promise( ( resolve, reject ) => {
@@ -503,7 +644,8 @@ export const RenderPartial = ( partial, file, parent, path, rendered, iterator =
 							filePath.replace( SETTINGS.get().folder.content, '' ),
 							parent,
 							rendered,
-							iterator
+							iterator,
+							prefetchResult
 						)
 						.catch( reason => reject( reason ) )
 					)

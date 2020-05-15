@@ -73,6 +73,7 @@ export const SETTINGS = {
 			assets: Path.normalize(`${ process.cwd() }/assets/`),
 			site: Path.normalize(`${ process.cwd() }/dist/`),
 			styles: Path.normalize(`${ process.cwd() }/styles/`),
+			js: Path.normalize(`${ process.cwd() }/js/`),
 			index: 'index',
 			homepage: 'index',
 		},
