@@ -58,6 +58,8 @@ import babelify from 'babelify';
 import browserify from 'browserify';
 import {promisify} from 'util';
 import axios from "axios";
+import { SitemapStream, streamToPromise } from 'sitemap';
+import {sitemapStream} from './index';
 
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -76,6 +78,10 @@ import { Slug } from './helper';
 import { Path } from './path';
 import { Nav } from './nav';
 
+const defaultSitemapProps = {
+	changefreq: 'always',
+	priority: 0.8
+}
 
 /**
  * Resolve two paths relative to each other
@@ -351,6 +357,19 @@ export const RenderFile = ( content, file, parent = '', rendered = [], iterator 
 					Layouts.set( ID, parsedBody.frontmatter.layout );
 
 					if( file.endsWith('.yml') ) {
+
+						if(process.env.NODE_ENV === 'production'){
+							const d = new Date();
+							const lastMod = d.toISOString();
+							// SITEMAP
+							if(parsedBody.frontmatter._sitemap){
+								if(!parsedBody.frontmatter._sitemap.hasOwnProperty('enabled') || parsedBody.frontmatter._sitemap.enabled === true){
+									sitemapStream.write({...parsedBody.frontmatter._sitemap, url: `${SETTINGS.get().site.globalProp.url}/${ID === 'index' ? '' : ID}`, lastmod: lastMod });
+								}
+							} else {
+								sitemapStream.write({...defaultSitemapProps, url: `${SETTINGS.get().site.globalProp.url}/${ID === 'index' ? '' : ID}`, lastmod: lastMod });
+							}
+						}
 						
 						// Generate a per-page partials list
 

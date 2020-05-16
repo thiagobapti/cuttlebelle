@@ -13,7 +13,7 @@
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------
 // Dependencies
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------
-import Fs from 'fs';
+import Fs, {createWriteStream} from 'fs';
 
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -25,6 +25,10 @@ import { RenderAllPages, RenderAssets, PreRender } from './render';
 import { SETTINGS } from './settings';
 import { Watch } from './watch';
 import { Path } from './path';
+import { SitemapStream  } from 'sitemap';
+import rimraf from "rimraf";
+
+export let sitemapStream;
 
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -80,6 +84,19 @@ if( Fs.existsSync( pkgLocation ) ) {
 		let content;
 		let layout;
 
+		if(process.env.NODE_ENV === 'production'){
+			rimraf.sync(SETTINGS.get().folder.site);
+
+			if (!Fs.existsSync(SETTINGS.get().folder.site)){
+				Fs.mkdirSync(SETTINGS.get().folder.site);
+			}
+
+			sitemapStream = new SitemapStream({ hostname: SETTINGS.get().site.globalProp.url, lastmodDateOnly: false });
+
+			const writeStream = createWriteStream(`${SETTINGS.get().folder.site}sitemap.xml`);
+			sitemapStream.pipe(writeStream);
+		}
+
 		// pre-render everything
 		try {
 			({ content, layout } = await PreRender());
@@ -128,6 +145,9 @@ if( Fs.existsSync( pkgLocation ) ) {
 			}
 
 			const elapsedTime = process.hrtime( startTime );
+
+			if(process.env.NODE_ENV === 'production')
+				sitemapStream.end();	
 
 			Log.done(
 				`${ pages.length > 0
